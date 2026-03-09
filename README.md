@@ -83,12 +83,14 @@ gcloud run logs tail ps-4feb-service --region=us-central1
 ### `scripts/test_grade.py` — send a grading request
 
 ```bash
-python scripts/test_grade.py <ID> <CEFR> [URL]
+python scripts/test_grade.py <ID= int> <CEFR> <GCP URL>
+
+CEFR = text or positive int (sleep time for grade background duration), default=60s
 
 # Examples
 python scripts/test_grade.py 2 B1                              # local, even ID
-python scripts/test_grade.py 1 B1                              # local, odd ID
-python scripts/test_grade.py 2 B1 https://your-cloud-run-url  # remote
+python scripts/test_grade.py 13 4200 B1                              # local, odd ID
+python scripts/test_grade.py 2 B1 <URL> # remote
 ```
 
 **CEFR controls simulated grading duration.** If CEFR is a positive integer string, it is used as sleep seconds. Otherwise the default is 60s.
@@ -97,14 +99,6 @@ python scripts/test_grade.py 2 B1 https://your-cloud-run-url  # remote
 python scripts/test_grade.py 2 50      # sleeps 50s
 python scripts/test_grade.py 2 2000    # sleeps ~33 min
 ```
-
-**ID controls the simulated score outcome:**
-
-| ID | Score | Result |
-|---|---|---|
-| non-integer (e.g. `abc`) | — | 400 Bad Request, no Datastore entry created |
-| even (e.g. `2`, `10`) | random 20–95 | grading succeeds → Datastore `status: done` |
-| odd (e.g. `1`, `3`) | -1 | retry queued → Datastore `status: retry` → Pub/Sub message published → on second attempt `status: failed` |
 
 ### `scripts/test_grade.py` output
 
