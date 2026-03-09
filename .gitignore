@@ -27,3 +27,14 @@ build/
 
 # OS
 .DS_Store
+
+# Backup files
+*_backup.py
+*_backup*.py
+
+# Local-only files (excluded from the clean repo)
+test_background.sh
+DEPLOYMENT.md
+INSTRUCTION.md
+.dockerignore
+pyproject.toml
