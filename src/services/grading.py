@@ -25,8 +25,8 @@ def grade_edspeak_assessment(assessment_instance_id, cefr=None, start_time=None)
     # if assessment_instance_id is odd return -1
     if int(assessment_instance_id) % 2 == 1:
         print(f"#{assessment_instance_id} [GRADING] ({_e()}) score=-1 (odd id)")
-        return {"overall_score": -1, "sleep_time": sleep_time, "update_result": {}}
+        return {"overall_score": -1, "update_result": {}}
 
     overall_score = round(random.uniform(20, 95), 2)
     print(f"#{assessment_instance_id} [GRADING] ({_e()}) score={overall_score}")
-    return {"overall_score": overall_score, "sleep_time": sleep_time, "update_result": {}}
+    return {"overall_score": overall_score, "update_result": {}}

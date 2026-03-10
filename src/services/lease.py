@@ -102,16 +102,20 @@ def try_claim(assessment_instance_id):
         return "skip", retry_count
 
 
-def mark_done(assessment_instance_id, sleep_time=None):
-    _write_status(assessment_instance_id, {"status": "done"}, sleep_time=sleep_time)
+def store_sleep_time(assessment_instance_id, sleep_time):
+    _write_status(assessment_instance_id, {}, sleep_time=sleep_time)
 
 
-def mark_retry(assessment_instance_id, retry_count, sleep_time=None):
-    _write_status(assessment_instance_id, {"status": "retry", "retry_count": retry_count}, sleep_time=sleep_time)
+def mark_done(assessment_instance_id):
+    _write_status(assessment_instance_id, {"status": "done"})
 
 
-def mark_failed(assessment_instance_id, sleep_time=None):
-    _write_status(assessment_instance_id, {"status": "failed"}, sleep_time=sleep_time)
+def mark_retry(assessment_instance_id, retry_count):
+    _write_status(assessment_instance_id, {"status": "retry", "retry_count": retry_count})
+
+
+def mark_failed(assessment_instance_id):
+    _write_status(assessment_instance_id, {"status": "failed"})
 
 
 def _write_status(assessment_instance_id, updates, sleep_time=None):

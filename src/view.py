@@ -12,7 +12,7 @@ from google.cloud import pubsub_v1
 from config import PROJECT_ID, GRADE_RETRY_TOPIC_ID, MAX_GRADE_RETRIES
 from src.response import success, not_found, bad_request, internal_error
 from src.services.grading import grade_edspeak_assessment
-from src.services.lease import try_claim, mark_done, mark_retry, mark_failed
+from src.services.lease import try_claim, mark_done, mark_retry, mark_failed, store_sleep_time
 
 bp = Blueprint('view', __name__)
 
@@ -69,26 +69,30 @@ def _publish_retry(assessment_instance_id, cefr, retry_count, start_time=None):
 
 def grade_in_background(assessment_instance_id, cefr, retry_count, start_time, result_holder):
     try:
+        sleep_time = 60
+        if cefr and str(cefr).isdigit() and int(cefr) > 0:
+            sleep_time = int(cefr)
+        store_sleep_time(assessment_instance_id, sleep_time)
+
         result = grade_edspeak_assessment(
-            assessment_instance_id, 
-            cefr, 
+            assessment_instance_id,
+            cefr,
             start_time=start_time
         )
         overall_score = result["overall_score"]
-        sleep_time = result.get("sleep_time")
 
         if overall_score != -1:
             print(f"#{assessment_instance_id} [BG] (+{_elapsed(start_time)}) grading completed, score: {overall_score}, attempt: {retry_count}")
-            mark_done(assessment_instance_id, sleep_time=sleep_time)
+            mark_done(assessment_instance_id)
             result_holder[0] = "done"
         elif retry_count < MAX_GRADE_RETRIES:
             print(f"#{assessment_instance_id} [BG-RETRY] (+{_elapsed(start_time)}) score -1, attempt: {retry_count}, retrying...")
-            mark_retry(assessment_instance_id, retry_count + 1, sleep_time=sleep_time)
+            mark_retry(assessment_instance_id, retry_count + 1)
             _publish_retry(assessment_instance_id, cefr, retry_count + 1, start_time=start_time)
             result_holder[0] = "done"
         else:
             print(f"#{assessment_instance_id} [BG-FAILED] (+{_elapsed(start_time)}) all {retry_count + 1} attempts exhausted")
-            mark_failed(assessment_instance_id, sleep_time=sleep_time)
+            mark_failed(assessment_instance_id)
             result_holder[0] = "done"
     except Exception as e:
         # Signal crash back to the HTTP handler so it returns 500 (NACK).
