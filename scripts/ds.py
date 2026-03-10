@@ -30,13 +30,13 @@ def cmd_list():
     if not entities:
         print("No records found.")
         return
-    print(f"{'ID':<30} {'status':<12} {'retries':<9} {'updated_at':<21} duration")
-    print("-" * 88)
+    print(f"{'ID':<7} {'status':<12} {'retries':<9} {'updated_at':<21} duration")
+    print("-" * 63)
     for e in entities:
         updated = str(e.get('updated_at', '-'))[:19]
         duration = f"{e['duration_sec']:.1f} sec" if 'duration_sec' in e else '-'
         retries = f"{e.get('retry_count', 0)}/{MAX_GRADE_RETRIES}"
-        print(f"{e.key.name:<30} {e.get('status', '?'):<12} {retries:<9} {updated:<21} {duration}")
+        print(f"{e.key.name:<7} {e.get('status', '?'):<12} {retries:<9} {updated:<21} {duration}")
 
 
 def cmd_clear():
