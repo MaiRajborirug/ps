@@ -102,19 +102,19 @@ def try_claim(assessment_instance_id):
         return "skip", retry_count
 
 
-def mark_done(assessment_instance_id):
-    _write_status(assessment_instance_id, {"status": "done"})
+def mark_done(assessment_instance_id, sleep_time=None):
+    _write_status(assessment_instance_id, {"status": "done"}, sleep_time=sleep_time)
 
 
-def mark_retry(assessment_instance_id, retry_count):
-    _write_status(assessment_instance_id, {"status": "retry", "retry_count": retry_count})
+def mark_retry(assessment_instance_id, retry_count, sleep_time=None):
+    _write_status(assessment_instance_id, {"status": "retry", "retry_count": retry_count}, sleep_time=sleep_time)
 
 
-def mark_failed(assessment_instance_id):
-    _write_status(assessment_instance_id, {"status": "failed"})
+def mark_failed(assessment_instance_id, sleep_time=None):
+    _write_status(assessment_instance_id, {"status": "failed"}, sleep_time=sleep_time)
 
 
-def _write_status(assessment_instance_id, updates):
+def _write_status(assessment_instance_id, updates, sleep_time=None):
     client = _get_client()
     key = client.key(GRADING_STATUS_KIND, assessment_instance_id)
     with client.transaction():
@@ -126,6 +126,8 @@ def _write_status(assessment_instance_id, updates):
                 started_at = _aware(entity.get("started_at"))
                 if started_at:
                     extra["duration_sec"] = round((now - started_at).total_seconds(), 1)
+            if sleep_time is not None:
+                extra["sleep_time"] = sleep_time
             entity.update({**updates, **extra})
             client.put(entity)
 
