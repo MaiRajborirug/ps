@@ -3,7 +3,6 @@ FROM python:3.11-slim-bookworm
 WORKDIR /app
 
 # Copy application files
-COPY pyproject.toml .
 COPY app.py .
 COPY config.py .
 COPY src/ src/
