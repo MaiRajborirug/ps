@@ -65,6 +65,7 @@ def try_claim(assessment_instance_id):
                 "status": "grading",
                 "retry_count": 0,
                 "lease_expires_at": _lease_expiry(),
+                "started_at": now,
                 "updated_at": now,
             })
             client.put(entity)
@@ -119,6 +120,12 @@ def _write_status(assessment_instance_id, updates):
     with client.transaction():
         entity = client.get(key)
         if entity:
-            entity.update({**updates, "updated_at": _now()})
+            now = _now()
+            extra = {"updated_at": now}
+            if updates.get("status") in ("done", "failed"):
+                started_at = _aware(entity.get("started_at"))
+                if started_at:
+                    extra["duration_sec"] = round((now - started_at).total_seconds(), 1)
+            entity.update({**updates, **extra})
             client.put(entity)
 

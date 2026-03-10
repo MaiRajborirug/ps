@@ -10,7 +10,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from config import PROJECT_ID, DATASTORE_DATABASE_ID, GRADING_STATUS_KIND, NAMESPACE
+from config import PROJECT_ID, DATASTORE_DATABASE_ID, GRADING_STATUS_KIND, NAMESPACE, MAX_GRADE_RETRIES
 from google.cloud import datastore
 
 
@@ -30,10 +30,13 @@ def cmd_list():
     if not entities:
         print("No records found.")
         return
-    print(f"{'ID':<30} {'status':<12} updated_at")
-    print("-" * 70)
+    print(f"{'ID':<30} {'status':<12} {'retries':<9} {'updated_at':<21} duration")
+    print("-" * 88)
     for e in entities:
-        print(f"{e.key.name:<30} {e.get('status', '?'):<12} {e.get('updated_at', '-')}")
+        updated = str(e.get('updated_at', '-'))[:19]
+        duration = f"{e['duration_sec']:.1f} sec" if 'duration_sec' in e else '-'
+        retries = f"{e.get('retry_count', 0)}/{MAX_GRADE_RETRIES}"
+        print(f"{e.key.name:<30} {e.get('status', '?'):<12} {retries:<9} {updated:<21} {duration}")
 
 
 def cmd_clear():
