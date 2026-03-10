@@ -62,64 +62,6 @@ echo "Deployed! URL:"
 gcloud run services describe ps-4feb-service --project=${PROJECT_ID} --region=${REGION} --format='value(status.url)'
 """
 
-#######################################################################
-# Test tasks — set BASE_URL to override target (default: localhost:8877)
-#######################################################################
-
-[tasks.test-grade]
-description = "Send one grading request. ID=<even>=success, ID=<odd>=score-1. Usage: mise run test-grade ID=2"
-run = """
-ID=${ID:-2}
-CEFR=${CEFR:-B1}
-BASE_URL=${BASE_URL:-http://localhost:8877}
-DATA=$(python3 -c "
-import base64, json, sys
-payload = {'assessmentInstanceId': sys.argv[1], 'cefr': sys.argv[2], 'retryCount': 0, 'startTime': None}
-print(base64.b64encode(json.dumps(payload).encode()).decode())
-" "$ID" "$CEFR")
-echo "[TEST] POST /edspeak/grade  ID=${ID}  CEFR=${CEFR}  target=${BASE_URL}"
-curl -s -w "\n[HTTP %{http_code}]\n" -X POST "${BASE_URL}/edspeak/grade" \
-  -H "Content-Type: application/json" \
-  -d "$(printf '{"message":{"data":"%s"}}' "$DATA")"
-"""
-
-[tasks.test-dedup]
-description = "Fire two concurrent requests for the same ID — request 2 must return 500 NACK. Usage: mise run test-dedup ID=10"
-run = """
-ID=${ID:-10}
-BASE_URL=${BASE_URL:-http://localhost:8877}
-DATA=$(python3 -c "
-import base64, json, sys
-payload = {'assessmentInstanceId': sys.argv[1], 'cefr': 'B1', 'retryCount': 0, 'startTime': None}
-print(base64.b64encode(json.dumps(payload).encode()).decode())
-" "$ID")
-PAYLOAD=$(printf '{"message":{"data":"%s"}}' "$DATA")
-echo "[TEST] Sending request 1 for ID=${ID} in background..."
-curl -s -w "\n[Request 1 → HTTP %{http_code}]\n" -X POST "${BASE_URL}/edspeak/grade" \
-  -H "Content-Type: application/json" -d "${PAYLOAD}" &
-sleep 2
-echo "[TEST] Sending request 2 for ID=${ID} — expect 500 NACK..."
-curl -s -w "\n[Request 2 → HTTP %{http_code}]\n" -X POST "${BASE_URL}/edspeak/grade" \
-  -H "Content-Type: application/json" -d "${PAYLOAD}"
-wait
-"""
-
-[tasks.test-done-skip]
-description = "Send a second request after grading has finished — must return 200 ACK immediately (status=done). Run AFTER test-grade with the same ID."
-run = """
-ID=${ID:-2}
-BASE_URL=${BASE_URL:-http://localhost:8877}
-DATA=$(python3 -c "
-import base64, json, sys
-payload = {'assessmentInstanceId': sys.argv[1], 'cefr': 'B1', 'retryCount': 0, 'startTime': None}
-print(base64.b64encode(json.dumps(payload).encode()).decode())
-" "$ID")
-echo "[TEST] Re-sending grade request for completed ID=${ID} — expect 200 skip..."
-curl -s -w "\n[HTTP %{http_code}]\n" -X POST "${BASE_URL}/edspeak/grade" \
-  -H "Content-Type: application/json" \
-  -d "$(printf '{"message":{"data":"%s"}}' "$DATA")"
-"""
-
 [tasks.setup-registry]
 description = "Setup Artifact Registry (run once)"
 run = """
